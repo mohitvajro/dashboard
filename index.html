@@ -866,36 +866,6 @@
   return isRecent;
 });
 
-const recentDeals = filtered.filter(row => {
-  const dStr = (row['First conversation date'] || '').trim();
-  if (!dStr) return false;
-
-  const parts = dStr.split(/[\/\-]/).map(str => str.trim());
-  if (parts.length !== 3) {
-    console.warn('⚠️ Skipping invalid date:', dStr);
-    return false;
-  }
-
-  let [day, month, year] = parts.map(Number);
-  if (!day || !month || !year) {
-    console.warn('❌ Invalid numeric values in date:', dStr);
-    return false;
-  }
-
-  const dealDate = new Date(year, month - 1, day);
-  if (isNaN(dealDate.getTime())) {
-    console.warn('❌ Failed to construct date:', dealDate, 'from', dStr);
-    return false;
-  }
-
-  const diffDays = (now - dealDate) / (1000 * 60 * 60 * 24);
-  const isRecent = diffDays <= 10 && diffDays >= 0;
-
-  // 🔎 Log deals that passed or failed
-  console.log(`[CHECK] ${row['Deals']} → ${dStr} → parsed=${dealDate.toDateString()} → diff=${diffDays.toFixed(1)}d → recent=${isRecent}`);
-
-  return isRecent;
-});
 
   }).sort((a, b) => {
     const [d1, m1, y1] = (a['First conversation date'] || '').split(/[\/\-]/).map(Number);
