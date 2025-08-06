@@ -812,7 +812,7 @@
         }
         // --- Deals Table ---
         // --- Deals Table + Top 5 Deals + Recent Activity ---
-        function renderTable(filtered) {
+       function renderTable(filtered) {
   // Top 5 Deals panel
   let topDeals = filtered.slice().sort((a, b) =>
     parseFloat((b['MRR'] || '0').replace(/[$,]/g, '')) -
@@ -839,18 +839,23 @@
   });
   topDealsHtml += `</div></div>`;
 
-  // ✅ Recent Activity: Deals from the last 10 days
+  // ✅ Recent Activity section — Deals added in last 10 days (parsed from DD/MM/YYYY)
   const now = new Date();
-  let recentDeals = filtered.filter(row => {
+  const recentDeals = filtered.filter(row => {
     const dStr = row['First conversation date'];
     if (!dStr) return false;
-    const dealDate = new Date(dStr);
+
+    const [day, month, year] = dStr.split(/[\/\-]/).map(Number);
+    const dealDate = new Date(year, month - 1, day);
     if (isNaN(dealDate.getTime())) return false;
+
     const diffDays = (now - dealDate) / (1000 * 60 * 60 * 24);
     return diffDays <= 10 && diffDays >= 0;
   }).sort((a, b) => {
-    let da = new Date(a['First conversation date']);
-    let db = new Date(b['First conversation date']);
+    const [d1, m1, y1] = (a['First conversation date'] || '').split(/[\/\-]/).map(Number);
+    const [d2, m2, y2] = (b['First conversation date'] || '').split(/[\/\-]/).map(Number);
+    const da = new Date(y1, m1 - 1, d1);
+    const db = new Date(y2, m2 - 1, d2);
     return db - da;
   }).slice(0, 10);
 
@@ -877,6 +882,7 @@
 
   recentHtml += `</ul></div>`;
 
+  // Layout container
   let html = `<div style='display:flex;gap:36px;flex-wrap:wrap;align-items:flex-start;'>
     <div style='flex:1;'>${topDealsHtml}${recentHtml}</div>
     <div style='flex:2;'>`;
@@ -918,7 +924,7 @@
 
   document.getElementById("mrr-table").innerHTML = html;
 
-  // Optional: Add functionality to export button, if exists
+  // Export button (optional)
   var exportBtn = document.getElementById('export-deals-csv');
   if (exportBtn) {
     exportBtn.onclick = function () {
