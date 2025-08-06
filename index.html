@@ -831,29 +831,34 @@
           // Recent Activity panel (last 5 deals by date)
         // ✅ Recent Activity — deals added in the last 10 days
 const now = new Date();
-let recentDeals = filtered.filter(row => {
-  let dStr = (row['First conversation date'] || '').trim();
-  if (!dStr) return false;
+const recentDeals = filtered.filter(row => {
+  const rawDate = (row['First conversation date'] || '').trim();
+  if (!rawDate) return false;
 
-  // Parse DD/MM/YYYY manually
-  let [day, month, year] = dStr.split(/[\/\-]/).map(Number);
+  const parts = rawDate.split(/[\/\-]/); // Split DD/MM/YYYY
+  if (parts.length !== 3) return false;
+
+  const [day, month, year] = parts.map(str => Number(str.trim()));
   if (!day || !month || !year) return false;
 
-  const dealDate = new Date(year, month - 1, day);
+  const dealDate = new Date(year, month - 1, day); // JS: month is 0-indexed
   if (isNaN(dealDate.getTime())) return false;
 
   const diffDays = (now - dealDate) / (1000 * 60 * 60 * 24);
-   // ✅ Add your console.log HERE
-  console.log(`[RECENT] ${row['Deals']} → ${dStr} → Days ago: ${Math.floor(diffDays)}`);
-  return diffDays >= 0 && diffDays <= 10;
+  const isRecent = diffDays >= 0 && diffDays <= 10;
+
+  // ✅ Debug log
+  console.log(`[RECENT] ${row['Deals']} → ${rawDate} → Diff: ${Math.floor(diffDays)}d → recent=${isRecent}`);
+
+  return isRecent;
 }).sort((a, b) => {
-  // Sort descending
   const [d1, m1, y1] = a['First conversation date'].split(/[\/\-]/).map(Number);
   const [d2, m2, y2] = b['First conversation date'].split(/[\/\-]/).map(Number);
   const da = new Date(y1, m1 - 1, d1);
   const db = new Date(y2, m2 - 1, d2);
   return db - da;
 });
+
           let recentHtml = `<div style='margin-bottom:18px;'><h2 style='margin-bottom:8px;'>Recent Activity</h2><ul style='list-style:none;padding:0;margin:0;'>`;
           recentDeals.forEach(deal => {
             let name = deal['Deals'] || '';
