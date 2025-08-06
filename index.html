@@ -970,21 +970,32 @@ function loadLeaderboard(monthKey) {
   }
 
   console.log("🌐 Fetching CSV:", csvUrl);
- Papa.parse(csvUrl, {
+Papa.parse(csvUrl, {
   download: true,
   header: false,
   skipEmptyLines: true,
   complete: function (results) {
     loader.style.display = "none";
-    console.log("🟢 PapaParse complete:", results.data);
+    console.log("🟢 PapaParse complete:", results);
 
     const rawData = results.data;
 
-    // ✅ Extract headers and rows manually
-    const headers = rawData[0].map(header => header.trim());
-    const rows = rawData.slice(1).map(row => row.map(cell => (typeof cell === "string" ? cell.trim() : cell)));
+    if (!rawData || rawData.length < 2) {
+      console.error("❌ Not enough data in CSV.");
+      container.innerHTML = `<div style="color: #ef4444;padding:10px;">No data found in leaderboard.</div>`;
+      return;
+    }
 
-    // ✅ Map rows to objects using headers
+    // Extract headers
+    const headers = rawData[0].map(header => header.trim());
+    console.log("📌 Headers:", headers);
+
+    // Extract rows
+    const rows = rawData.slice(1).map(row =>
+      row.map(cell => (typeof cell === "string" ? cell.trim() : cell))
+    );
+
+    // Map rows to objects
     const data = rows.map(row => {
       const obj = {};
       headers.forEach((key, i) => {
@@ -995,9 +1006,21 @@ function loadLeaderboard(monthKey) {
       Object.values(row).some(cell => cell && cell.toString().trim() !== "")
     );
 
-    console.log("👀 Leaderboard row keys:", Object.keys(data[0]));
+    if (!data || data.length === 0) {
+      console.error("❌ No valid rows after cleaning.");
+      container.innerHTML = `<div style="color: #ef4444;padding:10px;">Leaderboard is empty.</div>`;
+      return;
+    }
+
+    console.log("✅ Parsed Data Sample:", data[0]);
     leaderboardCache[monthKey] = data;
-    renderLeaderboardTable(data);
+
+    try {
+      renderLeaderboardTable(data);
+    } catch (e) {
+      console.error("❌ Error rendering leaderboard table:", e);
+      container.innerHTML = `<div style="color: #ef4444;padding:10px;">Error rendering leaderboard data.</div>`;
+    }
   },
   error: function (err) {
     loader.style.display = "none";
