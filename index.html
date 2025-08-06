@@ -988,16 +988,24 @@ function loadLeaderboard(monthKey) {
 }
 
 // 👇 Initialize leaderboard when the document is ready
-document.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("load", function () {
   const select = document.getElementById("leaderboard-month-select");
-  const defaultMonth = select?.value || "july";
-  if (select) {
-    loadLeaderboard(defaultMonth);
-    select.addEventListener("change", () => {
-      loadLeaderboard(select.value);
-    });
+  const loader = document.getElementById("leaderboard-loading");
+  const container = document.getElementById("leaderboard-content");
+
+  if (!select || !loader || !container) {
+    console.error("❌ Element not found: leaderboard dropdown, loader or content container is missing.");
+    return;
   }
+
+  const defaultMonth = select.value || "july";
+  loadLeaderboard(defaultMonth);
+
+  select.addEventListener("change", () => {
+    loadLeaderboard(select.value);
+  });
 });
+
         // --- Main render function ---
         renderAll = function() {
           const filtered = getFiltered();
