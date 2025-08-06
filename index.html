@@ -970,38 +970,41 @@ function loadLeaderboard(monthKey) {
   }
 
   console.log("🌐 Fetching CSV:", csvUrl);
-  Papa.parse(csvUrl, {
-    download: true,
-    header: true,
-    complete: function(results) {
-      loader.style.display = "none";
-      console.log("🟢 PapaParse complete:", results.data);
-      const data = results.data.map(row => {
-    // Trim all values
-    const cleaned = {};
-    for (let key in row) {
-      const val = row[key];
-      if (typeof val === "string") {
-        cleaned[key.trim()] = val.trim();
-      } else {
-        cleaned[key.trim()] = val;
-      }
-    }
-    return cleaned;
-  })
-  .filter(row =>
-    Object.values(row).some(cell => cell && cell.toString().trim() !== "")
-  );
-      console.log("🟢 Filtered rows:", data.length, data);
-      leaderboardCache[monthKey] = data;
-      renderLeaderboardTable(data);
-    },
-    error: function(err) {
-      loader.style.display = "none";
-      container.innerHTML = `<div style="color: #ef4444;padding:10px;">Failed to load leaderboard data.</div>`;
-      console.error("Leaderboard fetch failed", err);
-    }
-  });
+ Papa.parse(csvUrl, {
+  download: true,
+  header: false,
+  skipEmptyLines: true,
+  complete: function (results) {
+    loader.style.display = "none";
+    console.log("🟢 PapaParse complete:", results.data);
+
+    const rawData = results.data;
+
+    // ✅ Extract headers and rows manually
+    const headers = rawData[0].map(header => header.trim());
+    const rows = rawData.slice(1).map(row => row.map(cell => (typeof cell === "string" ? cell.trim() : cell)));
+
+    // ✅ Map rows to objects using headers
+    const data = rows.map(row => {
+      const obj = {};
+      headers.forEach((key, i) => {
+        obj[key] = row[i] || "";
+      });
+      return obj;
+    }).filter(row =>
+      Object.values(row).some(cell => cell && cell.toString().trim() !== "")
+    );
+
+    console.log("👀 Leaderboard row keys:", Object.keys(data[0]));
+    leaderboardCache[monthKey] = data;
+    renderLeaderboardTable(data);
+  },
+  error: function (err) {
+    loader.style.display = "none";
+    container.innerHTML = `<div style="color: #ef4444;padding:10px;">Failed to load leaderboard data.</div>`;
+    console.error("Leaderboard fetch failed", err);
+  }
+});
 }
 
 window.addEventListener("load", function () {
