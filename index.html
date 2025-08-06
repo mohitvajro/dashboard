@@ -976,9 +976,22 @@ function loadLeaderboard(monthKey) {
     complete: function(results) {
       loader.style.display = "none";
       console.log("🟢 PapaParse complete:", results.data);
-      const data = results.data.filter(row =>
-        Object.values(row).some(cell => cell && cell.trim() !== "")
-      );
+      const data = results.data.map(row => {
+    // Trim all values
+    const cleaned = {};
+    for (let key in row) {
+      const val = row[key];
+      if (typeof val === "string") {
+        cleaned[key.trim()] = val.trim();
+      } else {
+        cleaned[key.trim()] = val;
+      }
+    }
+    return cleaned;
+  })
+  .filter(row =>
+    Object.values(row).some(cell => cell && cell.toString().trim() !== "")
+  );
       console.log("🟢 Filtered rows:", data.length, data);
       leaderboardCache[monthKey] = data;
       renderLeaderboardTable(data);
