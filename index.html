@@ -924,28 +924,47 @@ const recentDeals = filtered.filter(row => {
           window.location.href = 'login.html';
         };
         // --- Leaderboard Data ---
-     const leaderboardCSVs = {
+  const leaderboardCSVs = {
   "july": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQLlDYkYa6wmOrXfP-BPm2HU9FRhaGNKIOPPcrinS8L7KktKR5nCZ_Pyttx99EhU3kJgXy2P5zDjZ6L/pub?output=csv",
   "august": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTa6MrafxiUc7wMUScMaAHPBTI9VEv-a4JpPA2-jQKbatTgRby24wZxhK8WzzuO_izGKWHfH_TwKEOU/pub?output=csv"
 };
 
-let leaderboardCache = {}; // for performance
+let leaderboardCache = {};
 
-function loadAndRenderLeaderboard(monthKey) {
+function renderLeaderboardTable(rows) {
   const container = document.getElementById("leaderboard-content");
-  container.innerHTML = ""; // clear previous
-  document.getElementById("leaderboard-loading").style.display = "block";
-
-  if (leaderboardCache[monthKey]) {
-    renderLeaderboardTable(leaderboardCache[monthKey]);
-    document.getElementById("leaderboard-loading").style.display = "none";
+  if (!rows || !rows.length) {
+    container.innerHTML = "<div style='padding:12px;color:#999;'>No leaderboard data available for this month.</div>";
     return;
   }
 
+  const columns = Object.keys(rows[0]);
+  let html = `<table><thead><tr>${columns.map(col => `<th>${col}</th>`).join("")}</tr></thead><tbody>`;
+
+  rows.forEach(row => {
+    html += `<tr>${columns.map(col => `<td>${row[col] || ''}</td>`).join("")}</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+function loadLeaderboard(monthKey) {
+  const container = document.getElementById("leaderboard-content");
+  const loader = document.getElementById("leaderboard-loading");
+  container.innerHTML = "";
+  loader.style.display = "block";
+
   const csvUrl = leaderboardCSVs[monthKey];
   if (!csvUrl) {
-    container.innerHTML = `<div style="color:#ef4444;padding:10px;">No leaderboard data for this month.</div>`;
-    document.getElementById("leaderboard-loading").style.display = "none";
+    loader.style.display = "none";
+    container.innerHTML = `<div style="color:#ef4444;padding:10px;">No CSV URL found for "${monthKey}"</div>`;
+    return;
+  }
+
+  if (leaderboardCache[monthKey]) {
+    renderLeaderboardTable(leaderboardCache[monthKey]);
+    loader.style.display = "none";
     return;
   }
 
@@ -953,45 +972,32 @@ function loadAndRenderLeaderboard(monthKey) {
     download: true,
     header: true,
     complete: function(results) {
-      document.getElementById("leaderboard-loading").style.display = "none";
-      const data = results.data.filter(row => Object.values(row).some(cell => cell && cell.trim() !== ""));
+      loader.style.display = "none";
+      const data = results.data.filter(row =>
+        Object.values(row).some(cell => cell && cell.trim() !== "")
+      );
       leaderboardCache[monthKey] = data;
       renderLeaderboardTable(data);
     },
     error: function(err) {
-      document.getElementById("leaderboard-loading").style.display = "none";
-      container.innerHTML = `<div style="color: #ef4444;padding:10px;">Error loading leaderboard!</div>`;
-      console.error('Leaderboard fetch failed', err);
+      loader.style.display = "none";
+      container.innerHTML = `<div style="color: #ef4444;padding:10px;">Failed to load leaderboard data.</div>`;
+      console.error("Leaderboard fetch failed", err);
     }
   });
 }
 
-function renderLeaderboardTable(rows) {
-  const container = document.getElementById("leaderboard-content");
-  if (!rows || !rows.length) {
-    container.innerHTML = "<div style='color:#888;padding:12px;'>No data found for this month.</div>";
-    return;
-  }
-  const columns = Object.keys(rows[0]);
-  let html = `<table><thead><tr>${columns.map(col=>`<th>${col}</th>`).join("")}</tr></thead><tbody>`;
-  rows.forEach(row => {
-    html += `<tr>${columns.map(col=>`<td>${row[col] || ''}</td>`).join("")}</tr>`;
-  });
-  html += "</tbody></table>";
-  container.innerHTML = html;
-}
-
-// Setup dropdown change event
-document.addEventListener("DOMContentLoaded", function() {
+// 👇 Initialize leaderboard when the document is ready
+document.addEventListener("DOMContentLoaded", () => {
   const select = document.getElementById("leaderboard-month-select");
-  if (!select) return;
-  loadAndRenderLeaderboard(select.value);
-
-  select.addEventListener("change", function() {
-    loadAndRenderLeaderboard(this.value);
-  });
+  const defaultMonth = select?.value || "july";
+  if (select) {
+    loadLeaderboard(defaultMonth);
+    select.addEventListener("change", () => {
+      loadLeaderboard(select.value);
+    });
+  }
 });
-
         // --- Main render function ---
         renderAll = function() {
           const filtered = getFiltered();
