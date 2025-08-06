@@ -949,7 +949,8 @@ function renderLeaderboardTable(rows) {
   container.innerHTML = html;
 }
 
-function loadLeaderboard(monthKey) {
+function loadLeaderboard(monthKey) { 
+  console.log("📊 Loading leaderboard for:", monthKey);
   const container = document.getElementById("leaderboard-content");
   const loader = document.getElementById("leaderboard-loading");
   container.innerHTML = "";
