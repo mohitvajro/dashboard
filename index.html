@@ -924,13 +924,15 @@ const recentDeals = filtered.filter(row => {
           window.location.href = 'login.html';
         };
         // --- Leaderboard Data ---
-  const leaderboardCSVs = {
+// ✅ Leaderboard: Load from individual CSVs for each month
+const leaderboardCSVs = {
   "july": "https://docs.google.com/spreadsheets/d/e/2PACX-1vQLlDYkYa6wmOrXfP-BPm2HU9FRhaGNKIOPPcrinS8L7KktKR5nCZ_Pyttx99EhU3kJgXy2P5zDjZ6L/pub?output=csv",
   "august": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTa6MrafxiUc7wMUScMaAHPBTI9VEv-a4JpPA2-jQKbatTgRby24wZxhK8WzzuO_izGKWHfH_TwKEOU/pub?output=csv"
 };
 
 let leaderboardCache = {};
 
+// 🧠 Renders leaderboard HTML table
 function renderLeaderboardTable(rows) {
   const container = document.getElementById("leaderboard-content");
   if (!rows || !rows.length) {
@@ -940,35 +942,38 @@ function renderLeaderboardTable(rows) {
 
   const columns = Object.keys(rows[0]);
   let html = `<table><thead><tr>${columns.map(col => `<th>${col}</th>`).join("")}</tr></thead><tbody>`;
-
   rows.forEach(row => {
     html += `<tr>${columns.map(col => `<td>${row[col] || ''}</td>`).join("")}</tr>`;
   });
-
-  html += `</tbody></table>`;
+  html += "</tbody></table>";
   container.innerHTML = html;
 }
 
-function loadLeaderboard(monthKey) { 
+// 📊 Load leaderboard based on selected month key
+function loadLeaderboard(monthKey) {
   console.log("📊 Loading leaderboard for:", monthKey);
+
   const container = document.getElementById("leaderboard-content");
   const loader = document.getElementById("leaderboard-loading");
   container.innerHTML = "";
   loader.style.display = "block";
 
   const csvUrl = leaderboardCSVs[monthKey];
+
   if (!csvUrl) {
     loader.style.display = "none";
     container.innerHTML = `<div style="color:#ef4444;padding:10px;">No CSV URL found for "${monthKey}"</div>`;
     return;
   }
 
+  // Serve from cache if available
   if (leaderboardCache[monthKey]) {
     renderLeaderboardTable(leaderboardCache[monthKey]);
     loader.style.display = "none";
     return;
   }
 
+  // Load via PapaParse
   Papa.parse(csvUrl, {
     download: true,
     header: true,
@@ -988,17 +993,13 @@ function loadLeaderboard(monthKey) {
   });
 }
 
-// 👇 Initialize leaderboard when the document is ready
+// 🚀 Attach dropdown change logic on page load
 window.addEventListener("load", function () {
   const select = document.getElementById("leaderboard-month-select");
-  const loader = document.getElementById("leaderboard-loading");
-  const container = document.getElementById("leaderboard-content");
-
-  if (!select || !loader || !container) {
-    console.error("❌ Element not found: leaderboard dropdown, loader or content container is missing.");
+  if (!select) {
+    console.error("❌ Could not find leaderboard-month-select dropdown.");
     return;
   }
-
   const defaultMonth = select.value || "july";
   loadLeaderboard(defaultMonth);
 
@@ -1006,6 +1007,7 @@ window.addEventListener("load", function () {
     loadLeaderboard(select.value);
   });
 });
+
 
         // --- Main render function ---
         renderAll = function() {
