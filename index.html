@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sales Pipeline</title>
@@ -970,36 +971,64 @@ function loadLeaderboard(monthKey) {
   }
 
   console.log("🌐 Fetching CSV:", csvUrl);
-  Papa.parse(csvUrl, {
-    download: true,
-    header: false,
-    skipEmptyLines: true,
-    complete: function(results) {
-      loader.style.display = "none";
-      console.log("🟢 PapaParse complete:", results.data);
+Papa.parse(csvUrl, {
+  download: true,
+  header: false,
+  skipEmptyLines: true,
+  complete: function (results) {
+    loader.style.display = "none";
+    console.log("🟢 PapaParse complete:", results);
 
-      const allRows = results.data;
-      const headers = allRows[0];
-      const rows = allRows.slice(1).map(row => {
-        const obj = {};
-        headers.forEach((header, i) => {
-          obj[header.trim()] = (row[i] || "").trim();
-        });
-        return obj;
-      }).filter(row =>
-        Object.values(row).some(cell => cell && cell.toString().trim() !== "")
-      );
+    const rawData = results.data;
 
-      leaderboardCache[monthKey] = rows;
-      renderLeaderboardTable(rows);
-    },
-    error: function(err) {
-      loader.style.display = "none";
-      container.innerHTML = `<div style="color: #ef4444;padding:10px;">Failed to load leaderboard data.</div>`;
-      console.error("Leaderboard fetch failed", err);
+    if (!rawData || rawData.length < 2) {
+      console.error("❌ Not enough data in CSV.");
+      container.innerHTML = `<div style="color: #ef4444;padding:10px;">No data found in leaderboard.</div>`;
+      return;
     }
-  });
 
+    // Extract headers
+    const headers = rawData[0].map(header => header.trim());
+    console.log("📌 Headers:", headers);
+
+    // Extract rows
+    const rows = rawData.slice(1).map(row =>
+      row.map(cell => (typeof cell === "string" ? cell.trim() : cell))
+    );
+
+    // Map rows to objects
+    const data = rows.map(row => {
+      const obj = {};
+      headers.forEach((key, i) => {
+        obj[key] = row[i] || "";
+      });
+      return obj;
+    }).filter(row =>
+      Object.values(row).some(cell => cell && cell.toString().trim() !== "")
+    );
+
+    if (!data || data.length === 0) {
+      console.error("❌ No valid rows after cleaning.");
+      container.innerHTML = `<div style="color: #ef4444;padding:10px;">Leaderboard is empty.</div>`;
+      return;
+    }
+
+    console.log("✅ Parsed Data Sample:", data[0]);
+    leaderboardCache[monthKey] = data;
+
+    try {
+      renderLeaderboardTable(data);
+    } catch (e) {
+      console.error("❌ Error rendering leaderboard table:", e);
+      container.innerHTML = `<div style="color: #ef4444;padding:10px;">Error rendering leaderboard data.</div>`;
+    }
+  },
+  error: function (err) {
+    loader.style.display = "none";
+    container.innerHTML = `<div style="color: #ef4444;padding:10px;">Failed to load leaderboard data.</div>`;
+    console.error("Leaderboard fetch failed", err);
+  }
+});
 }
 
 window.addEventListener("load", function () {
