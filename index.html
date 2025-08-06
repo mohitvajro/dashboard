@@ -932,15 +932,14 @@ const leaderboardCSVs = {
 
 let leaderboardCache = {};
 
-// 🧠 Renders leaderboard HTML table
 function renderLeaderboardTable(rows) {
   const container = document.getElementById("leaderboard-content");
   if (!rows || !rows.length) {
     container.innerHTML = "<div style='padding:12px;color:#999;'>No leaderboard data available for this month.</div>";
     return;
   }
-
   const columns = Object.keys(rows[0]);
+  console.log("🏷️ Table columns:", columns);
   let html = `<table><thead><tr>${columns.map(col => `<th>${col}</th>`).join("")}</tr></thead><tbody>`;
   rows.forEach(row => {
     html += `<tr>${columns.map(col => `<td>${row[col] || ''}</td>`).join("")}</tr>`;
@@ -949,39 +948,38 @@ function renderLeaderboardTable(rows) {
   container.innerHTML = html;
 }
 
-// 📊 Load leaderboard based on selected month key
 function loadLeaderboard(monthKey) {
   console.log("📊 Loading leaderboard for:", monthKey);
-
   const container = document.getElementById("leaderboard-content");
   const loader = document.getElementById("leaderboard-loading");
   container.innerHTML = "";
   loader.style.display = "block";
 
   const csvUrl = leaderboardCSVs[monthKey];
-
   if (!csvUrl) {
     loader.style.display = "none";
     container.innerHTML = `<div style="color:#ef4444;padding:10px;">No CSV URL found for "${monthKey}"</div>`;
     return;
   }
 
-  // Serve from cache if available
   if (leaderboardCache[monthKey]) {
+    console.log("🟢 Rendering from cache", leaderboardCache[monthKey]);
     renderLeaderboardTable(leaderboardCache[monthKey]);
     loader.style.display = "none";
     return;
   }
 
-  // Load via PapaParse
+  console.log("🌐 Fetching CSV:", csvUrl);
   Papa.parse(csvUrl, {
     download: true,
     header: true,
     complete: function(results) {
       loader.style.display = "none";
+      console.log("🟢 PapaParse complete:", results.data);
       const data = results.data.filter(row =>
         Object.values(row).some(cell => cell && cell.trim() !== "")
       );
+      console.log("🟢 Filtered rows:", data.length, data);
       leaderboardCache[monthKey] = data;
       renderLeaderboardTable(data);
     },
@@ -993,7 +991,6 @@ function loadLeaderboard(monthKey) {
   });
 }
 
-// 🚀 Attach dropdown change logic on page load
 window.addEventListener("load", function () {
   const select = document.getElementById("leaderboard-month-select");
   if (!select) {
@@ -1007,6 +1004,7 @@ window.addEventListener("load", function () {
     loadLeaderboard(select.value);
   });
 });
+
 
 
         // --- Main render function ---
