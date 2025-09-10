@@ -1012,10 +1012,14 @@ const leaderboardCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTa6M
     });
 
     // --- Conversion Month Selector ---
-    const conversionMonthSelectorHtml = `<div style='margin-bottom:18px;display:flex;align-items:center;gap:14px;'><label for='conversion-month' style='font-weight:600;color:#6366f1;'>Conversion Month:</label><select id='conversion-month' style='padding:5px 12px;border-radius:7px;border:1.5px solid #c7d2fe;'><option value='aug'>August 2025</option><option value='jul'>July 2025</option></select></div>`;
+    const conversionMonthSelectorHtml = `<div style='margin-bottom:18px;display:flex;align-items:center;gap:14px;'><label for='conversion-month' style='font-weight:600;color:#6366f1;'>Conversion Month:</label><select id='conversion-month' style='padding:5px 12px;border-radius:7px;border:1.5px solid #c7d2fe;'><option value='sep'>September 2025</option><option value='aug'>August 2025</option><option value='jul'>July 2025</option></select></div>`;
     document.getElementById('conversion-tables').insertAdjacentHTML('beforebegin', conversionMonthSelectorHtml);
     // --- Conversion CSV URLs by month ---
     const conversionCsvUrls = {
+      sep: {
+        inbound: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQvrnXjnUGrGJWhS3ozSQ5v3oJoNCQUWKG-aSyGuA7sYXitbttU0faQlyo-qjArk-O2VdPIIF3pRpml/pub?output=csv",
+        outbound: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRTbggkXhT4wAllUQdhcp4q-R2v6LrX6RAdydeReKzx66K1EXqMZw3rQ4pr_eR_L5b2ORdZxtgkCmlU/pub?output=csv"
+      },
       aug: {
         inbound: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRzUvvzt7m3JMB0mb8d4INPeS5jPh3KuD1Lnag0XkMDUjJguMsgGrt810KuiSoegNcg1nxkc1JAK1is/pub?output=csv",
         outbound: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRr3NM00ZlRT2njbMQvzq3WVooo_BxOG3sqvvEdtudI2YYByieOoAgxaHkjUFRexQSxbDSf6aBn10MF/pub?output=csv"
