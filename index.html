@@ -526,8 +526,8 @@
   <div class="dashboard-logo">🏆</div>
   <h1 style="margin: 0;">Leaderboard</h1>
   <select id="leaderboard-month-select" style="margin-left:18px; padding:7px 16px; border-radius:8px; border:1px solid #c7d2fe; font-weight:600;">
-      <option value="july">August 2025</option>
-     
+      <option value="aug">August 2025</option>
+      <option value="sep">September 2025</option>
   </select>
 </div>
 <div id="leaderboard-loading">Loading leaderboard...</div>
@@ -924,41 +924,55 @@ const recentDeals = filtered.filter(row => {
           localStorage.removeItem('dashboardSession');
           window.location.href = 'login.html';
         };
-        // --- Leaderboard Data ---
-// ✅ Leaderboard: Load from individual CSVs for each month
-const leaderboardCsvUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTa6MrafxiUc7wMUScMaAHPBTI9VEv-a4JpPA2-jQKbatTgRby24wZxhK8WzzuO_izGKWHfH_TwKEOU/pub?output=csv";
-        Papa.parse(leaderboardCsvUrl, {
-          download: true,
-          header: true,
-          complete: function(results) {
-            document.getElementById("leaderboard-loading").style.display = "none";
-            try {
-              const data = results.data.filter(row => Object.values(row).some(cell => cell && cell.trim() !== ""));
-              if (!data.length) {
-                document.getElementById("leaderboard-content").innerHTML = '<span style="color:red">No leaderboard data found.</span>';
-                return;
-              }
-              // Dynamic Table
-              const headers = Object.keys(data[0]);
-              let html = `<table><tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
-              data.forEach(row => {
-                html += `<tr>${headers.map(h => `<td>${row[h] || ''}</td>`).join("")}</tr>`;
-              });
-              html += "</table>";
-              document.getElementById("leaderboard-content").innerHTML = html;
-            } catch (e) {
-              document.getElementById("leaderboard-content").innerHTML = '<span style="color:red">Leaderboard error.</span>';
-              console.error('Leaderboard error:', e);
-            }
-          },
-          error: function(err) {
-            document.getElementById("leaderboard-loading").style.display = "none";
-            document.getElementById("leaderboard-content").innerHTML = '<span style="color:red">Failed to load leaderboard data.</span>';
-            console.error('Leaderboard fetch error:', err);
-          }
+        // --- Leaderboard Month Selector ---
+document.getElementById('leaderboard-month-select').innerHTML = `
+  <option value="aug">August 2025</option>
+  <option value="sep">September 2025</option>
+`;
+// --- Leaderboard CSV URLs by month ---
+const leaderboardCsvUrls = {
+  aug: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTa6MrafxiUc7wMUScMaAHPBTI9VEv-a4JpPA2-jQKbatTgRby24wZxhK8WzzuO_izGKWHfH_TwKEOU/pub?output=csv",
+  sep: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSXq84tzj95ZWyn91Tp11C0LzoumDR4xGmLl_JB2ugAqQRu1MRi6nEv124NeTvcaSXmAayubpXDCka4/pub?output=csv"
+};
+// --- Leaderboard Data Loader ---
+function loadLeaderboardData(month) {
+  document.getElementById("leaderboard-loading").style.display = "";
+  document.getElementById("leaderboard-content").innerHTML = "";
+  Papa.parse(leaderboardCsvUrls[month], {
+    download: true,
+    header: true,
+    complete: function(results) {
+      document.getElementById("leaderboard-loading").style.display = "none";
+      try {
+        const data = results.data.filter(row => Object.values(row).some(cell => cell && cell.trim() !== ""));
+        if (!data.length) {
+          document.getElementById("leaderboard-content").innerHTML = '<span style="color:red">No leaderboard data found.</span>';
+          return;
+        }
+        const headers = Object.keys(data[0]);
+        let html = `<table><tr>${headers.map(h => `<th>${h}</th>`).join("")}</tr>`;
+        data.forEach(row => {
+          html += `<tr>${headers.map(h => `<td>${row[h] || ''}</td>`).join("")}</tr>`;
         });
-
-
+        html += "</table>";
+        document.getElementById("leaderboard-content").innerHTML = html;
+      } catch (e) {
+        document.getElementById("leaderboard-content").innerHTML = '<span style="color:red">Leaderboard error.</span>';
+        console.error('Leaderboard error:', e);
+      }
+    },
+    error: function(err) {
+      document.getElementById("leaderboard-loading").style.display = "none";
+      document.getElementById("leaderboard-content").innerHTML = '<span style="color:red">Failed to load leaderboard data.</span>';
+      console.error('Leaderboard fetch error:', err);
+    }
+  });
+}
+document.getElementById('leaderboard-month-select').onchange = function() {
+  loadLeaderboardData(this.value);
+};
+// Initial load
+loadLeaderboardData('aug');
         // --- Main render function ---
         renderAll = function() {
           const filtered = getFiltered();
